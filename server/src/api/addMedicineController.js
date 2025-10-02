@@ -3,8 +3,10 @@ import Medication from "../models/medicineModel.js";
 
 export const addMedication = async (req, res) => {
   try {
+    console.log("Request body:", req.body);
+    const{medication,localuser}=req.body;
+    console.log("medicine",medication);
     const {
-      
       pillName,
       pillDescription,
       dosageDays,
@@ -17,9 +19,9 @@ export const addMedication = async (req, res) => {
       prescriptionId,
       adherenceHistory,
       notes
-    } = req.body;
-    const medication = new Medication({
-      
+    } = medication;
+    const sampleMedicine = new Medication({
+      userId:localuser.id,
       pillName,
       pillDescription,
       dosageDays,
@@ -35,11 +37,11 @@ export const addMedication = async (req, res) => {
     });
 
     
-    await medication.save();
+    await sampleMedicine.save();
     return res.status(201).json({
       success: true,
       message: "Medication saved successfully",
-      data: medication
+      data: sampleMedicine
     });
   } catch (error) {
     console.error("Error saving medication:", error);
