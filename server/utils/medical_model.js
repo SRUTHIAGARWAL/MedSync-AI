@@ -55,7 +55,7 @@ async function modelCall(input) {
       summary,
       input,
       output,
-      model: "emergency_model",
+      model: "medical_model",
     });
     console.log("Conversation saved successfully!");
   } catch (err) {

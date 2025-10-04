@@ -88,7 +88,7 @@ const modelCall = async (input) => {
       summary,
       input,
       output,
-      model: "emergency_model",
+      model: "personal_health_model",
     });
     console.log("Conversation saved successfully!");
   } catch (err) {
