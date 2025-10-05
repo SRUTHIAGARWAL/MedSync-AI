@@ -36,7 +36,7 @@ export default function Dashboard() {
     try {
       const data = await todayMedication();
       console.log('Fetched today\'s medications:', data);
-      setMedications(data?.data);
+      setMedications(Array.isArray(data) ? data : data?.data || []);
       console.log("medications",medications)
     } catch (error) {
       console.error('Error fetching medications:', error);
