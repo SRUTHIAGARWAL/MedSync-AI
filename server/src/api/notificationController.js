@@ -2,12 +2,36 @@ import Medication from "../models/medicineModel.js"; // your mongoose model
 import Notification from "../models/todayNotifications.js"; // new model
 import notifier from "node-notifier";
 
+// Global timer management to prevent duplicate notifications
+const activeTimers = new Map(); // userId -> Set of timer IDs
+
+// Clear all existing timers for a user
+function clearUserTimers(userId) {
+  const userTimers = activeTimers.get(userId);
+  if (userTimers) {
+    userTimers.forEach(timerId => {
+      clearTimeout(timerId);
+    });
+    userTimers.clear();
+    console.log(`🧹 Cleared ${userTimers.size || 0} existing timers for user ${userId}`);
+  }
+}
+
+// Add timer to tracking
+function addUserTimer(userId, timerId) {
+  if (!activeTimers.has(userId)) {
+    activeTimers.set(userId, new Set());
+  }
+  activeTimers.get(userId).add(timerId);
+}
+
 // Helper: convert HH:mm string to Date today
 function getTimeForToday(timeStr) {
   const [hours, minutes] = timeStr.split(":").map(Number);
   const now = new Date();
   return new Date(now.getFullYear(), now.getMonth(), now.getDate(), hours, minutes, 0);
 }
+
 
 // Helper: convert "15m" -> ms
 function parseDuration(str) {
@@ -19,17 +43,34 @@ function parseDuration(str) {
   return 0;
 }
 
-// Node desktop notification helper (for local testing)
-function sendNotification(title, body) {
-  notifier.notify({
+// WebSocket notification helper - sends to connected clients
+function sendNotification(title, body, userId = null, type = 'general') {
+  const notificationData = {
     title,
     message: body,
-    sound: true,
-    wait: false
-  });
-
-  console.log(`[NOTIFY] ${title}: ${body}`);
+    type,
+    timestamp: new Date().toISOString(),
+    id: Date.now() + Math.random() // Simple unique ID
+  };
+  
+  console.log(`[WEBSOCKET NOTIFY] ${title}: ${body}`);
+  
+  // Send to all connected clients or specific user
+  if (global.io) {
+    if (userId) {
+      // Send to specific user's room
+      global.io.to(`user-${userId}`).emit('notification', notificationData);
+      console.log(`Notification sent to user ${userId}`);
+    } else {
+      // Send to all connected clients
+      global.io.emit('notification', notificationData);
+      console.log('Notification sent to all clients');
+    }
+  } else {
+    console.warn('Socket.IO not available - notification not sent');
+  }
 }
+
 
 
 
@@ -50,6 +91,9 @@ if (user?.user?.id) {
 
 console.log("User id:", userId);
 
+  // 🧹 Clear any existing timers for this user to prevent duplicates
+  clearUserTimers(userId);
+  console.log(`🔄 Restarting scheduler for user ${userId} - existing timers cleared`);
 
   try {
     const today = new Date();
@@ -81,6 +125,8 @@ console.log("User id:", userId);
         const beforeMs = medTime.getTime() - parseDuration(dose.remindBefore);
         if (beforeMs > Date.now()) {
           // 💾 Save to DB
+
+
           await Notification.findOneAndUpdate(
             { userId, date: todayDate },
             {
@@ -99,14 +145,22 @@ console.log("User id:", userId);
             { upsert: true, new: true }
           );
 
-          setTimeout(() => {
+          const timerId = setTimeout(() => {
             sendNotification(
               "Medicine Reminder ⏰",
-              `Take ${med.pillName} in ${dose.remindBefore}`
+              `Take ${med.pillName} in ${dose.remindBefore}`,
+              userId,
+              "before"
             );
           }, beforeMs - Date.now());
+          
+          // Track the timer
+          addUserTimer(userId, timerId);
+          console.log(`⏰ Scheduled BEFORE reminder for ${med.pillName} at ${new Date(beforeMs).toLocaleTimeString()}`);
         }
 
+
+  
         // ON-TIME reminder
         if (medTime.getTime() > Date.now()) {
           await Notification.findOneAndUpdate(
@@ -127,12 +181,19 @@ console.log("User id:", userId);
             { upsert: true, new: true }
           );
 
-          setTimeout(() => {
+          const timerId = setTimeout(() => {
             sendNotification(
               "Time to Take Medicine 💊",
-              `Take ${med.pillName} now`
+              `Take ${med.pillName} now`,
+              userId,
+              "onTime"
             );
+
           }, medTime.getTime() - Date.now());
+          
+          // Track the timer
+          addUserTimer(userId, timerId);
+          console.log(`💊 Scheduled ON-TIME reminder for ${med.pillName} at ${medTime.toLocaleTimeString()}`);
         }
 
         // AFTER reminder
@@ -156,19 +217,25 @@ console.log("User id:", userId);
             { upsert: true, new: true }
           );
 
-          setTimeout(() => {
+          const timerId = setTimeout(() => {
             sendNotification(
               "Missed Dose ❗",
-              `Did you forget ${med.pillName}?`
+              `Did you forget ${med.pillName}?`,
+              userId,
+              "after"
             );
           }, afterMs - Date.now());
+          
+          // Track the timer
+          addUserTimer(userId, timerId);
+          console.log(`❗ Scheduled AFTER reminder for ${med.pillName} at ${new Date(afterMs).toLocaleTimeString()}`);
         }
       });
     });
 
     // 🔹 Dummy test notification after 10 seconds
-    setTimeout(async () => {
-      sendNotification("🔔 Test Notification", "This is a dummy test alert!");
+    const testTimerId = setTimeout(async () => {
+      sendNotification("🔔 Test Notification", "This is a dummy test alert!", userId, "test");
 
       await Notification.findOneAndUpdate(
         { userId, date: todayDate },
@@ -186,6 +253,14 @@ console.log("User id:", userId);
         { upsert: true, new: true }
       );
     }, 10 * 1000);
+    
+    // Track the test timer
+    addUserTimer(userId, testTimerId);
+    console.log(`🧪 Scheduled TEST notification in 10 seconds`);
+
+    // Summary log
+    const userTimers = activeTimers.get(userId);
+    console.log(`✅ Total ${userTimers ? userTimers.size : 0} notifications scheduled for user ${userId}`);
 
   } catch (err) {
     console.error("Error scheduling notifications:", err);
