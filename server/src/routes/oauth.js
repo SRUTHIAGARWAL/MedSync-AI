@@ -13,8 +13,8 @@ router.get("/login", (req, res) => {
 });
 
 // Step 2: Google redirects back with a code
-router.post("/callback", async (req, res) => {
-    const { code, userId } = req.body;
+router.get("/callback", async (req, res) => {
+    const { code, state: userId } = req.query;
 
     console.log("Backend - code:", code);
     console.log("Backend - userId:", userId);
@@ -31,8 +31,11 @@ router.post("/callback", async (req, res) => {
       await User.findByIdAndUpdate(userId, {
         googleTokens: tokens,
       });
+
+      console.log("Tokens saved successfully for user:", userId);
   
       res.json({ success: true, tokens });
+
     } catch (err) {
       console.error(err);
       res.status(500).json({ success: false, error: err.message });
@@ -41,14 +44,16 @@ router.post("/callback", async (req, res) => {
 
   router.get("/calendar/status/:userId", async (req, res) => {
     try {
+        console.log("Checking calendar for userId:", req.params.userId);
       const user = await User.findById(req.params.userId);
-      if (!user || !user.googleTokens)
-        return res.status(400).json({ linked: false, message: "No tokens found" });
+      if (!user) return res.status(400).json({ linked: false, message: "User not found" });
+      if (!user.googleTokens) return res.status(400).json({ linked: false, message: "No Google tokens found" });
+
   
       const oauth2Client = new google.auth.OAuth2(
         process.env.GOOGLE_CLIENT_ID,
         process.env.GOOGLE_CLIENT_SECRET,
-        "http://localhost:5173/oauth/callback"
+        process.env.GOOGLE_REDIRECT_URI
       );
       oauth2Client.setCredentials(user.googleTokens);
   

@@ -26,7 +26,7 @@ export const addMedicineToGoogleCalendar = async (userId, medicine) => {
 
     await calendar.events.insert({
       calendarId: "primary",
-      requestBody: {
+      resource: {
         summary: `Take ${medicine.pillName}`,
         description: medicine.pillDescription || "",
         start: { dateTime: startDateTime.toISOString() },

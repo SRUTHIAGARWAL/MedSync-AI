@@ -131,12 +131,16 @@ export default function Dashboard() {
 
   useEffect(() => {
     const user = JSON.parse(localStorage.getItem("user"));
+    console.log("debug 1");
     const userId = user?.id || user?._id; 
-    if (!userId?.id) {
+    console.log("debug 2");
+    if (!userId) {
+      console.log("userId:", userId);
       console.warn("User ID not found in localStorage!");
       return;
     }
-    fetch(`http://localhost:8080/api/calendar/status/${userId?.id || userId?._id || userId}`)
+    console.log("debug 3");
+    fetch(`http://localhost:8080/api/oauth/calendar/status/${userId}`)
       .then(res => res.json())
       .then(data => {
         if (data.linked) {
@@ -146,6 +150,7 @@ export default function Dashboard() {
           setLinked(false);
         }
       });
+      console.log("debug 4");
   }, []);
 
   return (
