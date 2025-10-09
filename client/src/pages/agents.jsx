@@ -30,7 +30,7 @@ export default function MultiAgentChat() {
       accentColor: 'text-purple-400',
       borderColor: 'border-purple-500',
       description: 'Advanced medical knowledge & research',
-      badge: 'Neural Network',
+      badge: 'General Health',
       complexity: 'Deep Learning Model'
     },
     {
