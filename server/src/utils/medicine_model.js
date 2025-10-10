@@ -18,9 +18,18 @@ if (!GROQ_API_KEY) {
 
 // define the model (pass apiKey explicitly)
 let chatModel;
+let summaryModel;
 try {
   chatModel = new ChatGroq({
     model: "llama-3.3-70b-versatile",
+    temperature: 0,
+    maxTokens: undefined,
+    maxRetries: 2,
+    apiKey: GROQ_API_KEY,
+  });
+
+  summaryModel =  new ChatGroq({
+    model: "meta-llama/llama-4-scout-17b-16e-instruct",
     temperature: 0,
     maxTokens: undefined,
     maxRetries: 2,
@@ -31,9 +40,22 @@ try {
 }
 
 // define the memory
+const summaryPrompt = PromptTemplate.fromTemplate(`
+Progressively summarize the conversation. Keep the summary under 50 words and return only the summary.
+Make sure that all the key words are included so not loss the flow of chat.
+
+Current summary:
+{summary}
+
+New lines of conversation:
+{new_lines}
+
+New summary:`);
+
 const memory = new ConversationSummaryMemory({
   memoryKey: "chat_history",
-  llm: chatModel,
+  llm: summaryModel,
+  prompt: summaryPrompt, // <-- Add this line
 });
 
 export default async function medicineModelHandler(req, res) {
@@ -68,7 +90,7 @@ export default async function medicineModelHandler(req, res) {
 
     //add the past data in the memory 
     await memory.saveContext(
-      { input: "What is the past chat?" },
+      { input: "This is past conversation" },
       { output: `Past Chat:\n${JSON.stringify(pastData, null, 2)}` }
     );
 
