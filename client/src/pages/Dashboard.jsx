@@ -9,7 +9,7 @@ import { useNotification } from '../context/notificationContext.jsx';
 
 export default function Dashboard() {
 
-  const{todayMedication,medicineStatus}=useMedicine();
+  const{todayMedication,medicineStatus,getStreakDays}=useMedicine();
 
   const{notifications,sendNotification,fetchTodayNotifications}=useNotification();
 
@@ -26,6 +26,7 @@ export default function Dashboard() {
 
   useEffect(() => {
     fetchTodayMedications();
+    getStreakDays().then(setStreak);
   }, []);
 
   useEffect(() => {
@@ -45,11 +46,6 @@ export default function Dashboard() {
       setLoading(false);
     }
   };
-
-
-
-
-
 
   
   const filterMedications = () => {
