@@ -4,6 +4,15 @@ A full-stack, open-source medication adherence assistant that combines a modern 
 
 ---
 
+## 📢 Announcements & Updates
+
+All important project updates, rules, and timelines are shared in the  
+**GitHub Discussions → Announcements** section.
+
+➡️ Please make sure to check it regularly.
+
+---
+
 ## 🚀 Why this project & how to contribute
 
 - **Open for contributors:** We welcome newcomers and experienced contributors alike. Good first issues, docs improvements, and feature work are all appreciated.
