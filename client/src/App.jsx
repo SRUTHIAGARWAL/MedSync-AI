@@ -18,6 +18,7 @@ import Analytics from "./pages/Analytics";
 import Reports from "./pages/Reports";
 import ReportChat from "./pages/ReportChat";
 import ReportAnalysis from "./pages/ReportAnalysis";
+import Settings from "./pages/Settings";
 
 
 function App() {
@@ -42,6 +43,7 @@ function App() {
         <Route path="/reports" element={<Reports />} />
         <Route path="/reportChat" element={<ReportChat />} />
         <Route path="/report-analysis" element={<ReportAnalysis />} />
+        <Route path="/settings" element={<Settings />} />
       </Routes>
         
         {/* Global notification toasts */}

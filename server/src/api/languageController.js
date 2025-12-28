@@ -30,7 +30,8 @@ export const getUserLanguage = async (req, res) => {
 export const updateUserLanguage = async (req, res) => {
   try {
     const userId = resolveUserId(req);
-    const { language } = req.body;
+    // Support both 'language' and 'preferredLanguage' parameter names
+    const language = req.body.language || req.body.preferredLanguage;
 
     if (!userId) {
       return res.status(400).json({ error: "User id missing" });
