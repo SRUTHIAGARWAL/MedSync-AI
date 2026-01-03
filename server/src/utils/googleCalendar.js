@@ -3,9 +3,24 @@ import User from "../models/User.js";
 
 export const addMedicineToGoogleCalendar = async (userId, medicine) => {
   try {
+    // Validate input parameters
     if (!userId) {
       console.warn("[Google Calendar] No userId provided for calendar sync");
       throw new Error("User ID is required for Google Calendar sync");
+    }
+
+    if (!medicine) {
+      console.warn("[Google Calendar] No medicine object provided");
+      throw new Error("Medicine object is required for calendar sync");
+    }
+
+    // Validate required medicine properties
+    if (!medicine.pillName || !medicine.dosageTimes || !Array.isArray(medicine.dosageTimes) || medicine.dosageTimes.length === 0) {
+      throw new Error("Medicine must have pillName and at least one dosageTime");
+    }
+
+    if (!medicine.startDate) {
+      throw new Error("Medicine must have a startDate");
     }
 
     const user = await User.findById(userId);
@@ -76,11 +91,10 @@ export const addMedicineToGoogleCalendar = async (userId, medicine) => {
           
           // If today is already a selected day, use today; otherwise move to next occurrence
           if (!selectedDayNumbers.includes(currentDayOfWeek) && daysToAdd > 0) {
-            startDateTime = new Date(startDateTime.getTime() + daysToAdd * 24 * 60 * 60 * 1000);
-            // Recalculate end time
-            const newEndDateTime = new Date(startDateTime);
-            newEndDateTime.setMinutes(newEndDateTime.getMinutes() + 15);
-            endDateTime.setTime(newEndDateTime.getTime());
+            // Use setDate() to properly handle DST transitions
+            startDateTime.setDate(startDateTime.getDate() + daysToAdd);
+            // Recalculate end time based on the adjusted start date
+            endDateTime.setTime(startDateTime.getTime() + 15 * 60 * 1000);
           }
         }
       }
@@ -89,12 +103,17 @@ export const addMedicineToGoogleCalendar = async (userId, medicine) => {
       if (medicine.endDate && medicine.endDate.trim() !== '') {
         try {
           const endDate = new Date(medicine.endDate);
-          const endDateStr = endDate.toISOString().split('T')[0].replace(/-/g, '');
+          // Set to end of day in UTC and format as RFC 5545 datetime (YYYYMMDDTHHMMSSZ)
+          endDate.setUTCHours(23, 59, 59, 0);
+          const endDateUtcStr = endDate
+            .toISOString()               // e.g. "2025-01-03T23:59:59.000Z"
+            .split('.')[0]              // "2025-01-03T23:59:59"
+            .replace(/[-:]/g, '') + 'Z'; // "20250103T235959Z"
           recurrence = recurrence.map(rule => {
             if (rule.includes('FREQ=WEEKLY')) {
-              return rule + `;UNTIL=${endDateStr}`;
+              return rule + `;UNTIL=${endDateUtcStr}`;
             } else if (rule.includes('FREQ=DAILY')) {
-              return rule + `;UNTIL=${endDateStr}`;
+              return rule + `;UNTIL=${endDateUtcStr}`;
             }
             return rule;
           });
@@ -104,8 +123,8 @@ export const addMedicineToGoogleCalendar = async (userId, medicine) => {
       }
 
       try {
-        // Get user's timezone from system or use default
-        const userTimeZone = Intl.DateTimeFormat().resolvedOptions().timeZone;
+        // Get user's timezone from profile or fall back to UTC
+        const userTimeZone = user.timeZone || "UTC";
         
         await calendar.events.insert({
           calendarId: "primary",

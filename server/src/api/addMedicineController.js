@@ -46,11 +46,21 @@ export const addMedication = async (req, res) => {
       calendarSyncStatus = await addMedicineToGoogleCalendar(localuser.id, sampleMedicine);
     } catch (calendarError) {
       console.error(`[Add Medicine] Google Calendar sync failed:`, calendarError.message);
-      calendarSyncStatus = {
+      // Roll back the saved medication to avoid inconsistent state
+      try {
+        await Medication.findByIdAndDelete(sampleMedicine._id);
+        console.log(`[Add Medicine] Rolled back medication ${sampleMedicine._id} after calendar sync failure`);
+      } catch (rollbackError) {
+        console.error(
+          "[Add Medicine] Failed to roll back medication after calendar sync failure:",
+          rollbackError
+        );
+      }
+      return res.status(500).json({
         success: false,
-        message: `Calendar sync failed: ${calendarError.message}`,
+        message: `Failed to save medication due to calendar sync error: ${calendarError.message}`,
         error: calendarError.message
-      };
+      });
     }
     
     // ✅ Restart notification scheduler with updated medications

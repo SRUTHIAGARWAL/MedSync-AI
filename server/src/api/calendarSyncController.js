@@ -12,7 +12,7 @@ export const syncMedicationsToCalendar = async (req, res) => {
       console.warn(`[Calendar Sync] Missing authenticated user ID`);
       return res.status(401).json({ success: false, message: "Unauthorized" });
     }
-    console.log(`🔄 Starting smart calendar sync for user:${userId}`);
+    console.log(`🔄 Starting smart calendar sync for user: ${userId}`);
 
     // Get user and check if Google Calendar is linked
     const user = await User.findById(userId);
@@ -84,8 +84,7 @@ export const syncMedicationsToCalendar = async (req, res) => {
     return res.status(500).json({
       success: false,
       message: "Failed to sync medications to calendar",
-      error: error.message,
-      details: process.env.NODE_ENV !== 'production' ? error.stack : undefined
+      error: error.message
     });
   }
 };
@@ -100,6 +99,7 @@ async function smartSyncMedications(calendar, medications, userId) {
       totalEvents += medicationEvents.length;
       
       details.push({
+        pillName: medication.pillName,
         eventsCreated: medicationEvents.length,
         schedule: medication.dosageTimes.map(dt => dt.time),
         days: medication.dosageDays
@@ -108,7 +108,8 @@ async function smartSyncMedications(calendar, medications, userId) {
       console.log(`📅 Created ${medicationEvents.length} events for ${medication.pillName}`);
     } catch (error) {
       console.error(`❌ Failed to sync ${medication.pillName}:`, error);
-      details.push({
+      depillName: medication.pillName,
+        tails.push({
         error: error.message,
         eventsCreated: 0
       });

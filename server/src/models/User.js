@@ -8,6 +8,10 @@ const userSchema = new mongoose.Schema({
     type: Object,  // stores access_token, refresh_token, expiry_date, etc.
     default: null,
   },
+  timeZone: {
+    type: String,
+    default: "UTC"  // User's timezone for calendar events
+  },
   lastCalendarSync: { 
     type: Date, 
     default: null 
