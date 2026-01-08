@@ -426,21 +426,36 @@ export default function Dashboard() {
   <div className="flex gap-2">
   <button
     onClick={() => handleStatusChange(med._id, 'taken')}
-    className="px-3 py-1 bg-emerald-600 hover:bg-emerald-700 rounded text-sm transition-colors"
+    disabled={isStatusSet}
+    className={`px-3 py-1 rounded text-sm transition-all
+      ${isStatusSet
+        ? 'bg-gray-500 opacity-50 cursor-not-allowed'
+        : 'bg-emerald-600 hover:bg-emerald-700 hover:scale-105'}
+    `}
   >
     Taken
   </button>
 
   <button
     onClick={() => handleStatusChange(med._id, 'missed')}
-    className="px-3 py-1 bg-red-600 hover:bg-red-700 rounded text-sm transition-colors"
+    disabled={isStatusSet}
+    className={`px-3 py-1 rounded text-sm transition-all
+      ${isStatusSet
+        ? 'bg-gray-500 opacity-50 cursor-not-allowed'
+        : 'bg-red-600 hover:bg-red-700 hover:scale-105'}
+    `}
   >
     Missed
   </button>
 
   <button
     onClick={() => handleStatusChange(med._id, 'delayed')}
-    className="px-3 py-1 bg-amber-600 hover:bg-amber-700 rounded text-sm transition-colors"
+    disabled={isStatusSet}
+    className={`px-3 py-1 rounded text-sm transition-all
+      ${isStatusSet
+        ? 'bg-gray-500 opacity-50 cursor-not-allowed'
+        : 'bg-amber-600 hover:bg-amber-700 hover:scale-105'}
+    `}
   >
     Delayed
   </button>
