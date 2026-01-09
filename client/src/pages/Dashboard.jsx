@@ -53,8 +53,6 @@ export default function Dashboard() {
     }
   }, []);
 
-
-
   useEffect(() => {
     fetchTodayMedications();
     getStreakDays().then(setStreak);
@@ -92,14 +90,15 @@ export default function Dashboard() {
     }
   };
 
-  const handleStatusToggle = async (medId) => {
-    try {
-      await medicineStatus(medId);
-      await fetchTodayMedications();
-    } catch (error) {
-      console.error('Error updating status:', error);
-    }
-  };
+ const handleStatusChange = async (medId, status) => {
+  try {
+    await medicineStatus(medId, status);
+    await fetchTodayMedications();
+  } catch (err) {
+    console.error(err);
+  }
+};
+
 
   const getStatusColor = (status) => {
     switch (status) {
@@ -422,12 +421,47 @@ export default function Dashboard() {
                             <p className="text-slate-400 text-sm">{med.dosageAmount} • {med.frequency}</p>
                           </div>
                         </div>
-                        <button
-                          onClick={() => handleStatusToggle(med._id)}
-                          className="px-4 py-2 bg-gradient-to-r from-orange-500 to-rose-500 hover:from-orange-600 hover:to-rose-600 rounded-lg text-sm font-medium transition-all shadow-lg"
-                        >
-                          Mark Taken
-                        </button>
+                        <div className="flex gap-2">
+                          </div>
+  <div className="flex gap-2">
+  <button
+    onClick={() => handleStatusChange(med._id, 'taken')}
+    disabled={isStatusSet}
+    className={`px-3 py-1 rounded text-sm transition-all
+      ${isStatusSet
+        ? 'bg-gray-500 opacity-50 cursor-not-allowed'
+        : 'bg-emerald-600 hover:bg-emerald-700 hover:scale-105'}
+    `}
+  >
+    Taken
+  </button>
+
+  <button
+    onClick={() => handleStatusChange(med._id, 'missed')}
+    disabled={isStatusSet}
+    className={`px-3 py-1 rounded text-sm transition-all
+      ${isStatusSet
+        ? 'bg-gray-500 opacity-50 cursor-not-allowed'
+        : 'bg-red-600 hover:bg-red-700 hover:scale-105'}
+    `}
+  >
+    Missed
+  </button>
+
+  <button
+    onClick={() => handleStatusChange(med._id, 'delayed')}
+    disabled={isStatusSet}
+    className={`px-3 py-1 rounded text-sm transition-all
+      ${isStatusSet
+        ? 'bg-gray-500 opacity-50 cursor-not-allowed'
+        : 'bg-amber-600 hover:bg-amber-700 hover:scale-105'}
+    `}
+  >
+    Delayed
+  </button>
+</div>
+
+
                       </div>
 
                       {displayInstructions && (
